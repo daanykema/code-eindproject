@@ -17,12 +17,16 @@ def read_matrix():
     return rowlist
 
 def calc_doc_vector(matrix):
-    vectorlist = list()
-    for row in matrix:
+    document_list = matrix[0]
+    document_list[0] = "Documents"
+    vector_list = list()
+    for idx,row in enumerate(matrix):
         sum_of_squares = 0
         for item in row:
             if type(item) == float:
                 sum_of_squares += item * item
-        vector_length = math.sqrt(sum_of_squares) 
-        
+        vector_list.append(math.sqrt(sum_of_squares))
+    print(vector_list)
+    print(document_list)
+
 calc_doc_vector(read_matrix())
