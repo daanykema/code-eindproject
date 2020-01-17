@@ -36,6 +36,20 @@ def read_matrix():
             rowlist.append(row)
     return rowlist
 
+#function to calc term frequencies
+def calc_tf(term, terms_dict):
+    #for term in term_list:
+    term_freqs = list()
+    term_freqs.append(term)
+    for key, value in terms_dict.items():
+        try:
+            term_freqs.append(terms_dict[key][term])    
+        except KeyError:
+            term_freqs.append(0)    
+            continue
+    return term_freqs
+
+
 #function that uses previously created matrix to calc document vector length
 def calc_doc_vector(matrix):
     document_list = matrix[0]
@@ -71,6 +85,7 @@ def run_query(matrix, document_vectors):
         similarity_scores[document] = term_weights / (query_vector_len * document_vectors[document])
     return sorted(similarity_scores.items(), key= lambda score:score[1], reverse=True)
 
+#function to create dictionary with term frequencies per document.
 def create_tf_dict():
     directory = '/users/Daan/Desktop/search_engine/test/'
     tf_dict = dict()
@@ -89,7 +104,8 @@ def create_tf_dict():
         tf_dict[filename] = tf_dict2
     return tf_dict
 
-def create_tf_matrix(terms):
+#function that creates 2D matrix of terms and frequencies
+def createTFMatrix(terms):
     tf_matrix = list()
     first_row = list(terms.keys())
     first_row.insert(0, '')
@@ -101,12 +117,29 @@ def create_tf_matrix(terms):
                 continue
             else:
                 term_list.append(k)
+    #loop to iterate over length of list
+    for term in term_list:
+        tf_matrix.append(calc_tf(term, terms))
+
+    return  tf_matrix
+
+def createTWMatrix(tf_matrix):
+    numOfNonZeros = 0
+    numOfDocs = len(tf_matrix[0])-1
+    for i in range(len(tf_matrix)):
+        for j  in range(len(tf_matrix)):
+            if type(tf_matrix[i][j]) == int and tf_matrix[i][j] != 0:
+                numOfNonZeros += 1
+    inverseDocFreq = 
+
 
 def main():
     doc_vectors = calc_doc_vector(read_matrix())
     #print(run_query(read_matrix(), doc_vectors))
     #print(create_tf_dict())
-    create_tf_matrix(create_tf_dict())
+    #print(createTFMatrix(create_tf_dict()))
+    createTWMatrix(createTFMatrix(create_tf_dict()))
+
 
 if __name__ == "__main__":
     main()
