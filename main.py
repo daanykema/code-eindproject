@@ -1,9 +1,26 @@
-import csv, math, os
+import csv, math, os, nltk, re
+from flask import Flask, render_template, request
+from nltk.corpus import stopwords
 
-filepath = 'test/'
+filepath = 'docs/'
 #helperfunction to check if item is float
 def is_float(item):
     return type(item) == float
+
+
+#function to calc term frequencies
+def calc_tf(term, terms_dict):
+    #for term in term_list:
+    term_freqs = list()
+    term_freqs.append(term)
+    for key, value in terms_dict.items():
+        try:
+            term_freqs.append(terms_dict[key][term])    
+        except KeyError:
+            term_freqs.append(0)    
+            continue
+    return term_freqs
+
 
 def clean_sentence(sentence):
     sentence = sentence.replace('.', '')
@@ -16,10 +33,13 @@ def clean_sentence(sentence):
     sentence = sentence.replace(';', '')
     sentence = sentence.replace('\"', '')
     sentence = sentence.replace('\\', '')
-    sentence = sentence.replace('\\', '')
     sentence = sentence.lower()
     return sentence
 
+#def remove_stopwords(wordlist):
+#   list_no_stopwords = list()
+    
+    
 #function to parse csv file and return nested list
 def read_matrix():
     with open('recepten.csv', 'r', newline='') as csvfile:
@@ -36,20 +56,6 @@ def read_matrix():
             rowlist.append(row)
     return rowlist
 
-#function to calc term frequencies
-def calc_tf(term, terms_dict):
-    #for term in term_list:
-    term_freqs = list()
-    term_freqs.append(term)
-    for key, value in terms_dict.items():
-        try:
-            term_freqs.append(terms_dict[key][term])    
-        except KeyError:
-            term_freqs.append(0)    
-            continue
-    return term_freqs
-
-
 #function that uses previously created matrix to calc document vector length
 def calc_doc_vector(matrix):
     document_list = matrix[0]
@@ -59,7 +65,7 @@ def calc_doc_vector(matrix):
     for idx in range(len(matrix[0])):
         sum_of_squares = 0
         for row in matrix:
-            if type(row[idx]) == float:
+            if is_float(row[idx]):
                 sum_of_squares += row[idx] * row[idx]
         if math.sqrt(sum_of_squares) != 0:
             vector_list.append(math.sqrt(sum_of_squares))
@@ -67,9 +73,9 @@ def calc_doc_vector(matrix):
     return doc_dictionary
 
 #function which loops through matrix and returns the similarity scores
-def run_query(matrix, document_vectors):
+def run_query(matrix, document_vectors, query):
     term_weights = 0
-    query = ['appel','deeg']
+    query = query.split()
     query_vector_len = math.sqrt(len(query))
     firstline = 1
     similarity_scores = dict()
@@ -87,7 +93,7 @@ def run_query(matrix, document_vectors):
 
 #function to create dictionary with term frequencies per document.
 def create_tf_dict():
-    directory = '/users/Daan/Desktop/search_engine/test/'
+    directory = '/users/Daan/Desktop/python/search_engine/docs/'
     tf_dict = dict()
     for filename in os.listdir(directory):
         filewithpath = filepath + filename
@@ -124,22 +130,54 @@ def createTFMatrix(terms):
     return  tf_matrix
 
 def createTWMatrix(tf_matrix):
-    numOfNonZeros = 0
     numOfDocs = len(tf_matrix[0])-1
     for i in range(len(tf_matrix)):
-        for j  in range(len(tf_matrix)):
+        numOfNonZeros = 0
+        for j  in range(len(tf_matrix[0])):
             if type(tf_matrix[i][j]) == int and tf_matrix[i][j] != 0:
                 numOfNonZeros += 1
-    inverseDocFreq = 
+        if numOfNonZeros != 0: 
+            inverseDocFreq = math.log((numOfDocs/numOfNonZeros),2)
+        else: 
+            continue
+        for j in range(len(tf_matrix[0])):
+            if type(tf_matrix[i][j]) == int:
+                tf_matrix[i][j] = tf_matrix[i][j] * inverseDocFreq
+    return tf_matrix
 
+#def main():
 
-def main():
-    doc_vectors = calc_doc_vector(read_matrix())
     #print(run_query(read_matrix(), doc_vectors))
+    #print()
     #print(create_tf_dict())
+    #print()
     #print(createTFMatrix(create_tf_dict()))
-    createTWMatrix(createTFMatrix(create_tf_dict()))
+    #print()
+    #print(createTWMatrix(createTFMatrix(create_tf_dict())))
+app = Flask(__name__)
 
+@app.route('/')
+def my_homepage():
+    return render_template('mainpage.html')
+
+@app.route('/', methods=['POST'])
+def my_form_post():
+    directory = '/users/Daan/Desktop/python/search_engine/docs/'
+    line_dict = dict()
+    for filename in os.listdir(directory):
+        filewithpath = filepath + filename
+        if filewithpath.endswith(".txt"):
+            f = open(filewithpath)
+            a = f.read()
+            line_dict[filename] = lines
+
+    query = request.form['text']
+    matrix = run_query(createTWMatrix(createTFMatrix(create_tf_dict())), calc_doc_vector(createTWMatrix(createTFMatrix(create_tf_dict()))), query)
+    return render_template('resultpage.html', query=query, scores= matrix, contents= line_dict)
+
+@app.route('/support')
+def support_pagina():
+    return 'Support Pagina'
 
 if __name__ == "__main__":
-    main()
+    app.run()
